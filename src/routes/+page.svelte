@@ -1,14 +1,72 @@
 <script>
   import { async } from "@firebase/util";
-  import { db } from "$lib/firebase-config";
-  import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
+  import { firestore } from "$lib/firebase-config";
+  import { collection, addDoc ,getDocs, updateDoc, doc } from "firebase/firestore";
 
-  const moviesCollectionRef = collection(db, "movies");
+  console.log('firestore',firestore)
 
-  console.log(moviesCollectionRef);
+  async function getMovie() {
+  try {
+    const movieCollection = await getDocs(collection(firestore, "movies"));
+      movieCollection.forEach((doc) => {
+      console.log(`${doc.id} => ${doc.data()}`);
+});
+} catch (e) {
+  console.error("Error adding document: ", e);
+}
+}
+
+
+async function addMovie() {
+  try {
+  const moviesCollectionRef = await addDoc(collection(firestore, "movies"), {
+    titel: "Eva",
+    genre: "Komedi",
+    releaseDate: "25/12/2003",
+    watched: false
+  });
+
+  console.log('try to yeet Eva ',moviesCollectionRef)
+
+  console.log("Document written with ID: ", moviesCollectionRef.id);
+} catch (e) {
+  console.error("Error adding document: ", e);
+}
+}
+
+
+async function updateMovie() {
+  try {
+  const moviesCollectionRef = await addDoc(collection(firestore, "movies"), {
+    titel: "Eva",
+    genre: "Komedi",
+    releaseDate: "25/12/2003",
+    watched: false
+  });
+  console.log("Document written with ID: ", moviesCollectionRef.id);
+} catch (e) {
+  console.error("Error adding document: ", e);
+}
+}
+
+
+
+
+
+
+
 </script>
 
+
+
+
+
+
 <h1 class="p-4 m-2 text-3xl font-bold">DE-VE-DE Movie Database</h1>
+
+
+<button class="btn" on:click={addMovie}> yeeet</button>
+<button class="btn btn-secondary" on:click={getMovie}> Give me the chockladboll</button>
 
 <div class="hero min-h-screen bg-base-200">
   <div class="hero-content flex-col lg:flex-row-reverse">
