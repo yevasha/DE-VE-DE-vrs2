@@ -3,8 +3,6 @@ import { getFirestore } from "firebase/firestore";
 import { getDatabase } from "firebase/database";
 
 
-console.log("hello there");
-
 const firebaseConfig = {
   apiKey: "AIzaSyCKqartjUi_WKh0OwVovvZe4eMkkLayCG0",
   authDomain: "devede-c50a4.firebaseapp.com",
@@ -18,5 +16,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const firestore = getFirestore(app);
 const database = getDatabase(app);
+console.log("hello there");
 
 export { firestore, database }

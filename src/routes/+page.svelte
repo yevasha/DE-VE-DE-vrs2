@@ -1,168 +1,164 @@
 <script>
-  import { async } from "@firebase/util";
+  import { onMount } from "svelte";
   import { firestore } from "$lib/firebase-config";
   import {
     collection,
     addDoc,
     getDocs,
-    updateDoc,
+    query,
+    where,
     doc,
     deleteDoc,
+    updateDoc,
   } from "firebase/firestore";
 
-  console.log("firestore", firestore);
+  let title = "",
+    genre = "",
+    releaseDate = "",
+    watched = false;
+  let movies = [];
+  let editingMovieId = null;
 
-  async function getMovie() {
-    try {
-      const movieCollection = await getDocs(collection(firestore, "movies"));
-      movieCollection.forEach((doc) => {
-        console.log(`${doc.id} => ${doc.data()}`);
-      });
-    } catch (e) {
-      console.error("Error adding document: ", e);
-    }
+  onMount(async () => {
+    fetchMovies();
+  });
+
+  async function fetchMovies() {
+    const querySnapshot = await getDocs(collection(firestore, "movies"));
+    movies = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   }
 
-  async function addMovie() {
-    try {
-      const moviesCollectionRef = await addDoc(
-        collection(firestore, "movies"),
-        {
-          titel: "Eva",
-          genre: "Komedi",
-          releaseDate: "25/12/2003",
-          watched: false,
-        },
-      );
-      console.log("try to yeet Eva ", moviesCollectionRef);
-      console.log("Document written with ID: ", moviesCollectionRef.id);
-    } catch (e) {
-      console.error("Error adding document: ", e);
+  async function addMovie(event) {
+    event.preventDefault();
+    if (editingMovieId) {
+      await updateMovie();
+    } else {
+      await addMovieIfNotExists({ title, genre, releaseDate, watched });
+    }
+    // Reset fields
+    title = genre = releaseDate = "";
+    watched = false;
+    editingMovieId = null;
+  }
+
+  async function addMovieIfNotExists(newMovie) {
+    const q = query(
+      collection(firestore, "movies"),
+      where("title", "==", newMovie.title),
+    );
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      try {
+        await addDoc(collection(firestore, "movies"), newMovie);
+        console.log("Movie added:", newMovie.title);
+        fetchMovies(); // Refresh the list
+      } catch (e) {
+        console.error("Error adding movie:", e);
+      }
+    } else {
+      alert(`A movie with the title '${newMovie.title}' already exists.`);
     }
   }
 
   async function updateMovie() {
-    try {
-      // Add a new document in collection "cities"
-      await setDoc(doc(db, "movies", "movie"), {
-        name: "Los Angeles",
-        state: "CA",
-        country: "USA",
-      });
-    } catch (e) {
-      console.error("Error adding document: ", e);
-    }
+    const movieRef = doc(firestore, "movies", editingMovieId);
+    await updateDoc(movieRef, { title, genre, releaseDate, watched });
+    console.log("Movie updated:", title);
+    fetchMovies(); // Refresh the list
   }
 
-  // Delete me here
-  async function deleteMovie() {
-    try {
-      await deleteDoc(doc(firestore, "movies", "movie"));
+  function editMovie(movieId) {
+    const movie = movies.find((m) => m.id === movieId);
+    title = movie.title;
+    genre = movie.genre;
+    releaseDate = movie.releaseDate;
+    watched = movie.watched;
+    editingMovieId = movieId;
+  }
 
-      console.log("Byeeee tihi ");
-    } catch (e) {
-      console.error("Error adding document: ", e);
-    }
+  async function deleteMovie(movieId) {
+    await deleteDoc(doc(firestore, "movies", movieId));
+    fetchMovies(); // Refresh the list
   }
 </script>
 
-<h1 class="p-4 m-2 text-3xl font-bold">DE-VE-DE Movie Database</h1>
+<div class="w-3/5 m-4">
+  <form on:submit|preventDefault={addMovie}>
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text">Title</span>
+      </label>
+      <input
+        type="text"
+        bind:value={title}
+        class="input input-bordered"
+        required
+      />
 
-<button class="btn" on:click={addMovie}> yeeet</button>
-<button class="btn btn-secondary" on:click={getMovie}>
-  Give me the chockladboll</button
->
-<button class="btn btn-neutral" on:click={deleteMovie}> meow</button>
+      <label class="label">
+        <span class="label-text">Genre</span>
+      </label>
+      <input
+        type="text"
+        bind:value={genre}
+        class="input input-bordered"
+        required
+      />
 
-<div class="hero min-h-screen bg-base-200">
-  <div class="hero-content flex-col lg:flex-row-reverse">
-    <div class="text-center w-96 lg:text-left">
-      <h1 class="text-5xl font-bold">Filmer att se</h1>
-      <p class="py-6">Fyll i info om filmen du vill se</p>
+      <label class="label">
+        <span class="label-text">Release Date</span>
+      </label>
+      <input
+        type="date"
+        bind:value={releaseDate}
+        class="input input-bordered"
+        required
+      />
     </div>
 
-    <div class="card shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
-      <form class="card-body">
-        <div class="form-control">
-          <!-- svelte-ignore a11y-label-has-associated-control -->
-          <label class="label">
-            <span class="label-text">Title</span>
-          </label>
-          <input type="" placeholder="" class="input input-bordered" required />
-        </div>
+    <label class="label flex items-center">
+      <input
+        type="checkbox"
+        bind:checked={watched}
+        class="checkbox checkbox-primary"
+      />
+      <span class="label-text ml-2">Watched</span>
+    </label>
 
-        <div class="form-control">
-          <!-- svelte-ignore a11y-label-has-associated-control -->
-          <label class="label">
-            <span class="label-text">Genre</span>
-          </label>
-          <input type="" placeholder="" class="input input-bordered" required />
-        </div>
-
-        <div class="form-control">
-          <!-- svelte-ignore a11y-label-has-associated-control -->
-          <label class="label">
-            <span class="label-text">Release date</span>
-          </label>
-          <input type="" placeholder="" class="input input-bordered" required />
-        </div>
-
-        <div class="form-control mt-6">
-          <button class="btn btn-primary">Lägg till</button>
-        </div>
-      </form>
+    ...
+    <div class="form-control mt-6">
+      <button type="submit" class="btn btn-primary">Submit</button>
     </div>
-  </div>
+  </form>
 </div>
 
-<div class="flex m-8 space-x-4">
-  <div class="card w-96 bg-base-100 shadow-xl">
-    <div class="card-body">
-      <h2 class="card-title">Title:</h2>
-      <p>Genre:</p>
-      <p>Release date:</p>
-      <div class="card-actions justify-end">
-        <!-- Open the modal using ID.showModal() method -->
-        <button class="btn btn-primary w-20" onclick="my_modal_1.showModal()"
-          >Edit</button
-        >
-
-        <button class="btn btn-primary">Watched</button>
+<div class="flex flex-wrap mt-4">
+  {#each movies as movie}
+    <div class="card w-96 bg-base-100 shadow-xl m-4">
+      <div class="card-body">
+        <h2 class="card-title">Title: {movie.title}</h2>
+        <p>Genre: {movie.genre}</p>
+        <p>Release date: {movie.releaseDate}</p>
+        <div class="card-actions justify-end">
+          <button class="btn btn-primary" on:click={() => editMovie(movie.id)}
+            >Edit</button
+          >
+          <button
+            class="btn btn-primary w-20"
+            on:click={() => deleteMovie(movie.id)}>Delete</button
+          >
+        </div>
       </div>
     </div>
-  </div>
-
-  <dialog id="my_modal_1" class="modal">
-    <div class="modal-box">
-      <h3 class="font-bold text-lg">Edit</h3>
-
-      <form class="">
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Title</span>
-          </label>
-          <input type="" placeholder="" class="input input-bordered" required />
-        </div>
-
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Genre</span>
-          </label>
-          <input type="" placeholder="" class="input input-bordered" required />
-        </div>
-
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Release date</span>
-          </label>
-          <input type="" placeholder="" class="input input-bordered" required />
-        </div>
-
-        <div class="form-control mt-6">
-          <button class="btn btn-primary">Delete</button>
-          <button class="btn btn-primary">Save</button>
-        </div>
-      </form>
-    </div>
-  </dialog>
+  {/each}
 </div>
+
+{#if editingMovieId}
+  {console.log("edit movie id", editingMovieId)}
+  <!-- Show your form here, pre-filled with the selected movie's data -->
+  <form on:submit|preventDefault={updateMovie}>
+    <!-- Form fields for title, genre, releaseDate, watched -->
+    <button type="submit">Update Movie</button>
+  </form>
+{/if}
