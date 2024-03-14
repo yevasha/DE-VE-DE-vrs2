@@ -83,6 +83,12 @@
   }
 </script>
 
+{#if editingMovieId}
+  {console.log("edit movie id", editingMovieId)}
+  <!-- Show your form here, pre-filled with the selected movie's data -->
+  <form on:submit|preventDefault={updateMovie}></form>
+{/if}
+
 <div class="w-3/5 m-4">
   <form on:submit|preventDefault={addMovie}>
     <div class="form-control">
@@ -153,12 +159,3 @@
     </div>
   {/each}
 </div>
-
-{#if editingMovieId}
-  {console.log("edit movie id", editingMovieId)}
-  <!-- Show your form here, pre-filled with the selected movie's data -->
-  <form on:submit|preventDefault={updateMovie}>
-    <!-- Form fields for title, genre, releaseDate, watched -->
-    <button type="submit">Update Movie</button>
-  </form>
-{/if}
